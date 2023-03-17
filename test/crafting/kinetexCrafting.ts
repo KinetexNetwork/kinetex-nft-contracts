@@ -44,7 +44,7 @@ describe("KinetexCrafting tests", function () {
     });
 
     describe("Crafting", () => {
-        it("Mints an nft with 4 dust as DUST lvl", async () => {
+        it("Receives a DUST lvl nft with 4 dust", async () => {
             const { deployer } = await getNamedAccounts();
             // mint a DUST token with 4 dust
             const tx1 = await rewards.safeMint(deployer, BigNumber.from("4"));
@@ -55,7 +55,7 @@ describe("KinetexCrafting tests", function () {
             expect(await rewards.ownerOf(tokenA)).to.eq(deployer);
         });
 
-        it("Mints an nft with 7 dust as DUST lvl", async () => {
+        it("Receives a DUST lvl nft with 7 dust", async () => {
             const { deployer } = await getNamedAccounts();
             const tx2 = await rewards.safeMint(deployer, BigNumber.from("7"));
             const receipt2 = await tx2.wait(1);
@@ -66,7 +66,7 @@ describe("KinetexCrafting tests", function () {
             expect(await rewards.ownerOf(tokenB)).to.eq(deployer);
         });
 
-        it("Creates an nft with 11 dust as GEM lvl", async () => {
+        it("Receives a GEM lvl nft with 11 dust", async () => {
             const { deployer } = await getNamedAccounts();
             const tokenA = BigNumber.from("0");
             const tokenB = BigNumber.from("1");
@@ -83,7 +83,8 @@ describe("KinetexCrafting tests", function () {
             expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
             expect(await rewards.getDust(tokenId)).to.eq(BigNumber.from("11"));
         });
-        it("Previous NFTs don't exist", async () => {
+
+        it("Burns received DUST nfts", async () => {
             const tokenA = BigNumber.from("0");
             const tokenB = BigNumber.from("1");
             // previous tokens don't exist
