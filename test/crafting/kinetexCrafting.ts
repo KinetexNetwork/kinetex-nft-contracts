@@ -66,7 +66,7 @@ describe("KinetexCrafting tests", function () {
             expect(await rewards.ownerOf(tokenB)).to.eq(deployer);
         });
 
-        it("Receives a GEM lvl nft with 11 dust", async () => {
+        it("Creates a GEM lvl nft with 11 dust", async () => {
             const { deployer } = await getNamedAccounts();
             const tokenA = BigNumber.from("0");
             const tokenB = BigNumber.from("1");
