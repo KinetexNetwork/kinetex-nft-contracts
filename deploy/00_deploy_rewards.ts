@@ -5,7 +5,6 @@ import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    console.log("deploying KinetexRewards");
     const { deployer, owner } = await hre.getNamedAccounts();
 
     const deployment = await hre.deployments.deploy("KinetexRewards", {
