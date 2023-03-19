@@ -1,19 +1,17 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { ethers, getNamedAccounts, upgrades, deployments, artifacts } from "hardhat";
-import { Level, encodeKeccak, encodeSolityKeccak } from "../helpers";
+import { getNamedAccounts, deployments } from "hardhat";
+import { Level, MINTER_ROLE, BURNER_ROLE } from "../helpers";
 
-import type { KinetexRewards, KinetexRewards__factory } from "../typechain";
+import type { KinetexRewards } from "../typechain";
 
 describe("KinetexRewards tests", function () {
     let rewards: KinetexRewards;
-    const minterRole = encodeSolityKeccak("MINTER_ROLE");
-    const burnerRole = encodeSolityKeccak("BURNER_ROLE");
 
-    const setupTest = deployments.createFixture(async ({ ethers, upgrades }) => {
-        const rewardsFactory: KinetexRewards__factory = await ethers.getContractFactory("KinetexRewards");
-        rewards = (await upgrades.deployProxy(rewardsFactory)) as KinetexRewards;
-        await rewards.deployed();
+    const setupTest = deployments.createFixture(async ({ ethers, deployments }) => {
+        await deployments.fixture();
+        const rewardsDeployment = await deployments.get("KinetexRewards");
+        rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;
     });
 
     this.beforeAll(async () => {
@@ -23,12 +21,12 @@ describe("KinetexRewards tests", function () {
     describe("Roles", () => {
         it("Deployer has MINTER role", async () => {
             const { deployer } = await getNamedAccounts();
-            expect(await rewards.hasRole(minterRole, deployer)).to.eq(true);
+            expect(await rewards.hasRole(MINTER_ROLE, deployer)).to.eq(true);
         });
 
         it("Deployer has BURNER role", async () => {
             const { deployer } = await getNamedAccounts();
-            expect(await rewards.hasRole(burnerRole, deployer)).to.eq(true);
+            expect(await rewards.hasRole(BURNER_ROLE, deployer)).to.eq(true);
         });
     });
 

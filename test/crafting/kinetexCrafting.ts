@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { Result } from "ethers/lib/utils";
 import { getNamedAccounts, deployments } from "hardhat";
-import { Level, encodeSolityKeccak } from "../../helpers";
+import { BURNER_ROLE, Level, MINTER_ROLE } from "../../helpers";
 
 import type {
     KinetexCrafting,
@@ -14,8 +14,6 @@ import type {
 describe("KinetexCrafting tests", function () {
     let rewards: KinetexRewards;
     let crafting: KinetexCrafting;
-    const minterRole = encodeSolityKeccak("MINTER_ROLE");
-    const burnerRole = encodeSolityKeccak("BURNER_ROLE");
 
     const mintAndGetAttributes = async (dustAmt: string): Promise<Result> => {
         const { deployer } = await getNamedAccounts();
@@ -26,16 +24,13 @@ describe("KinetexCrafting tests", function () {
     };
 
     const setupTest = deployments.createFixture(async ({ ethers, upgrades }) => {
-        const rewardsFactory: KinetexRewards__factory = await ethers.getContractFactory("KinetexRewards");
-        rewards = (await upgrades.deployProxy(rewardsFactory)) as KinetexRewards;
-        await rewards.deployed();
+        await deployments.fixture();
 
-        const craftingFactory: KinetexCrafting__factory = await ethers.getContractFactory("KinetexCrafting");
-        crafting = (await upgrades.deployProxy(craftingFactory, [rewards.address])) as KinetexCrafting;
-        await crafting.deployed();
+        const rewardsDeployment = await deployments.get("KinetexRewards");
+        rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;
 
-        await rewards.grantRole(minterRole, crafting.address);
-        await rewards.grantRole(burnerRole, crafting.address);
+        const craftingDeployment = await deployments.get("KinetexCrafting");
+        crafting = (await ethers.getContractAt("KinetexCrafting", craftingDeployment.address)) as KinetexCrafting;
     });
 
     this.beforeAll(async () => {
@@ -44,11 +39,11 @@ describe("KinetexCrafting tests", function () {
 
     describe("Roles", () => {
         it("Has MINTER role", async () => {
-            expect(await rewards.hasRole(minterRole, crafting.address)).to.eq(true);
+            expect(await rewards.hasRole(MINTER_ROLE, crafting.address)).to.eq(true);
         });
 
         it("Has BURNER role", async () => {
-            expect(await rewards.hasRole(burnerRole, crafting.address)).to.eq(true);
+            expect(await rewards.hasRole(BURNER_ROLE, crafting.address)).to.eq(true);
         });
     });
 
