@@ -1,11 +1,17 @@
+# TypeScript
 node_modules
 .env
 coverage
 coverage.json
 typechain
 
-#Hardhat files
+# Hardhat files
 cache
 artifacts
-deployments
+
+# Deployments
+deployments/*
+!deployments/mainnet
+
+# OZ Upgrades
 .openzeppelin
