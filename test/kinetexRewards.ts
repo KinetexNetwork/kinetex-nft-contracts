@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { getNamedAccounts, deployments } from "hardhat";
-import { Level, MINTER_ROLE, BURNER_ROLE } from "../helpers";
+import { getNamedAccounts, deployments, ethers } from "hardhat";
+import { Level, MINTER_ROLE, BURNER_ROLE, mint } from "../helpers";
 
 import type { KinetexRewards } from "../typechain";
 
@@ -76,6 +76,23 @@ describe("KinetexRewards tests", function () {
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
             expect(args.attributes.level).to.eq(Level.LIGHTNING);
             expect(args.attributes.dust).to.eq(dust);
+        });
+    });
+
+    describe("Security", () => {
+        it("Only owner of an NFT can burn it", async () => {
+            const { deployer, tester } = await getNamedAccounts();
+            const { tokenId } = await mint(rewards, "33");
+
+            const testerSigner = await ethers.getSigner(tester);
+            await expect(rewards.connect(testerSigner).burn(tokenId)).to.be.revertedWith(
+                "ERC721: caller is not token owner or approved"
+            );
+
+            const deployerSigner = await ethers.getSigner(deployer);
+            expect(await rewards.connect(deployerSigner).burn(tokenId))
+                .to.emit(rewards, "Burn")
+                .withArgs(tokenId);
         });
     });
 });

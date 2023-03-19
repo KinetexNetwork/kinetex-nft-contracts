@@ -39,7 +39,7 @@ const config: HardhatUserConfig = {
                 },
             ],
             forking: {
-                enabled: true,
+                enabled: false,
                 url: process.env["TESTNET_RPC"] || "",
             },
         },

@@ -5,11 +5,13 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IKinetexRewards} from "../IKinetexRewards.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {Levels} from "../libraries/Levels.sol";
 
 /// @custom:security-contact vasemkin@ya.ru
 contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IKinetexRewards private kinetexRewards;
+    address private kinetexRewardsAddress;
 
     event Craft(uint256 tokenA, uint256 tokenB, uint256 tokenId);
 
@@ -22,9 +24,19 @@ contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __Ownable_init();
         __UUPSUpgradeable_init();
         kinetexRewards = IKinetexRewards(_kinetexRewards);
+        kinetexRewardsAddress = _kinetexRewards;
     }
 
     function craft(uint256 tokenA, uint256 tokenB) external {
+        require(
+            IERC721(kinetexRewardsAddress).ownerOf(tokenA) == msg.sender,
+            "KC: Not the owner of tokenA"
+        );
+        require(
+            IERC721(kinetexRewardsAddress).ownerOf(tokenB) == msg.sender,
+            "KC: Not the owner of tokenB"
+        );
+
         uint256 totalDust = kinetexRewards.getDust(tokenA) + kinetexRewards.getDust(tokenB);
         uint256 tokenId = kinetexRewards.getNextTokenId();
 
