@@ -4,14 +4,17 @@ pragma solidity ^0.8.9;
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IKinetexRewards} from "../IKinetexRewards.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
+import {IKinetexRewards} from "../IKinetexRewards.sol";
 import {Levels} from "../libraries/Levels.sol";
 
 /// @custom:security-contact vasemkin@ya.ru
 contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IKinetexRewards private kinetexRewards;
     address private kinetexRewardsAddress;
+
+    uint256[98] private __gap;
 
     event Craft(uint256 tokenA, uint256 tokenB, uint256 tokenId);
 
@@ -21,6 +24,7 @@ contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function initialize(address _kinetexRewards) public initializer {
+        require(address(_kinetexRewards) != address(0), "KC: KinetexRewards address zero");
         __Ownable_init();
         __UUPSUpgradeable_init();
         kinetexRewards = IKinetexRewards(_kinetexRewards);

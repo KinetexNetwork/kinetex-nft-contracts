@@ -7,6 +7,7 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 import {Levels} from "./libraries/Levels.sol";
 import {IKinetexRewards} from "./IKinetexRewards.sol";
 
@@ -18,14 +19,17 @@ contract KinetexRewards is
     AccessControlUpgradeable,
     UUPSUpgradeable
 {
+    /*///////////////////////////////////////////////////////////////
+                            Libraries
+    //////////////////////////////////////////////////////////////*/
+
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    CountersUpgradeable.Counter private _tokenIdCounter;
+    /*///////////////////////////////////////////////////////////////
+                            State variables / Mappings
+    //////////////////////////////////////////////////////////////*/
 
-    struct Attributes {
-        Levels.Level level;
-        uint256 dust;
-    }
+    CountersUpgradeable.Counter private _tokenIdCounter;
 
     bytes32 public constant MINTER_ROLE = keccak256(abi.encodePacked("MINTER_ROLE"));
     bytes32 public constant BURNER_ROLE = keccak256(abi.encodePacked("BURNER_ROLE"));
@@ -33,9 +37,7 @@ contract KinetexRewards is
 
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 
-    event Mint(uint256 tokenId, Attributes attributes);
-    event Burn(uint256 tokenId);
-    event SetBaseURI(string uri);
+    uint256[96] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -51,6 +53,10 @@ contract KinetexRewards is
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(BURNER_ROLE, msg.sender);
     }
+
+    /*///////////////////////////////////////////////////////////////
+                            External/Public Functions
+    //////////////////////////////////////////////////////////////*/
 
     function safeMint(address to, uint256 dust) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
@@ -89,10 +95,6 @@ contract KinetexRewards is
         return _tokenIdCounter.current();
     }
 
-    function _baseURI() internal view override returns (string memory) {
-        return baseURI;
-    }
-
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -100,6 +102,14 @@ contract KinetexRewards is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                            Internal Functions
+    //////////////////////////////////////////////////////////////*/
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     function _authorizeUpgrade(address newImplementation)

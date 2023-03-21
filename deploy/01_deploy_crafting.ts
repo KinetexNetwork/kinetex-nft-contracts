@@ -28,4 +28,4 @@ const func: DeployFunction = async function ({ ethers, upgrades, deployments }: 
 };
 
 export default func;
-func.tags = ["Rewards"];
+func.tags = ["Crafting"];
