@@ -41,7 +41,7 @@ contract KinetexStaking is
     }
 
     uint256 private constant BASE_PERIOD = 30 days;
-    uint256 private rewardTokenDecimals;
+    uint256 private _rewardTokenDecimals;
 
     mapping(address => Staker) public stakers;
     mapping(uint256 => address) public stakerAddress;
@@ -66,7 +66,7 @@ contract KinetexStaking is
         __Pausable_init();
 
         _nftCollection = nftCollection;
-        rewardTokenDecimals = 18;
+        _rewardTokenDecimals = 18;
     }
 
     function stake(uint256[] calldata _tokenIds, uint256 _months) external {
@@ -85,10 +85,12 @@ contract KinetexStaking is
             stakerAddress[_tokenIds[i]] = msg.sender;
 
             (uint256 dust, Levels.Level level) = _getTokenProperties(_tokenIds[i]);
-            uint256 dustPercentage = _getDustPercentage(level, _months);
+
+            uint256 dustPercentage = Levels._getDustPercentage(level, _months);
             uint256 endTimestamp = _calculateEndTimeStamp(block.timestamp, _months);
 
             uint256 rewardAmount = _calculateReward(dust, dustPercentage);
+
             staker.votingPower += rewardAmount;
             staker.timeOfLastUpdate = block.timestamp;
 
@@ -132,6 +134,11 @@ contract KinetexStaking is
         }
     }
 
+    function setRewardsToken(address _token, uint256 _decimals) external onlyOwner {
+        _rewardsToken = _token;
+        _rewardTokenDecimals = _decimals;
+    }
+
     function claimRewards() external ifRewardsTokenSet {
         Staker storage staker = stakers[msg.sender];
 
@@ -148,7 +155,7 @@ contract KinetexStaking is
         view
         returns (uint256)
     {
-        return (((10 ^ rewardTokenDecimals) * dust) / dustPercentage) * 100;
+        return (((10**_rewardTokenDecimals) * dust) * dustPercentage) / 100;
     }
 
     function _calculateEndTimeStamp(uint256 startTimeStamp, uint256 months)
@@ -159,86 +166,10 @@ contract KinetexStaking is
         return BASE_PERIOD * months + startTimeStamp;
     }
 
-    function _getTokenProperties(uint256 tokenId)
-        internal
-        view
-        returns (uint256 dust, Levels.Level level)
-    {
+    function _getTokenProperties(uint256 tokenId) internal view returns (uint256, Levels.Level) {
         uint256 _dust = IKinetexRewards(_nftCollection).getDust(tokenId);
-        Levels.Level _level = Levels.getLevelByDustAmount(dust);
+        Levels.Level _level = Levels.getLevelByDustAmount(_dust);
         return (_dust, _level);
-    }
-
-    function _getDustPercentage(Levels.Level level, uint256 months)
-        internal
-        pure
-        returns (uint256 dustPercentage)
-    {
-        if (level == Levels.Level.DUST) {
-            if (months >= 12) {
-                return 100;
-            }
-            if (months >= 6) {
-                return 60;
-            }
-            if (months >= 3) {
-                return 30;
-            }
-            if (months >= 1) {
-                return 10;
-            }
-
-            return 0;
-        }
-
-        if (level == Levels.Level.GEM) {
-            if (months >= 10) {
-                return 100;
-            }
-            if (months >= 6) {
-                return 60;
-            }
-            if (months >= 3) {
-                return 40;
-            }
-            if (months >= 1) {
-                return 20;
-            }
-
-            return 0;
-        }
-
-        if (level == Levels.Level.LIGHTNING) {
-            if (months >= 8) {
-                return 100;
-            }
-            if (months >= 6) {
-                return 70;
-            }
-            if (months >= 3) {
-                return 50;
-            }
-            if (months >= 1) {
-                return 30;
-            }
-
-            return 0;
-        }
-
-        if (months >= 6) {
-            return 100;
-        }
-        if (months >= 5) {
-            return 80;
-        }
-        if (months >= 3) {
-            return 60;
-        }
-        if (months >= 1) {
-            return 40;
-        }
-
-        return 0;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
