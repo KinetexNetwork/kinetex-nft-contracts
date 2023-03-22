@@ -31,13 +31,16 @@ contract KinetexStaking is
         uint256 timeOfLastUpdate;
         uint256 votingPower;
         uint256 unclaimedRewards;
+        uint256 claimedRewards;
     }
 
     struct StakingCondition {
         uint256 tokenId;
-        uint256 rewardAmount;
         uint256 startTimestamp;
         uint256 endTimestamp;
+        uint256 totalRewards;
+        uint256 unclaimedRewards;
+        uint256 claimedRewards;
     }
 
     uint256 private constant BASE_PERIOD = 30 days;
@@ -55,7 +58,7 @@ contract KinetexStaking is
         _disableInitializers();
     }
 
-    modifier ifRewardsTokenSet() {
+    modifier hasRewardToken() {
         require(_rewardsToken != address(0), "KS: Reward token not set");
         _;
     }
@@ -69,8 +72,12 @@ contract KinetexStaking is
         _rewardTokenDecimals = 18;
     }
 
-    function stake(uint256[] calldata _tokenIds, uint256 _months) external {
+    function stake(uint256[] calldata _tokenIds, uint256 _periods) external {
         Staker storage staker = stakers[msg.sender];
+
+        if (staker.stakedTokenIds.length > 0) {
+            _updateRewards(msg.sender);
+        }
 
         uint256 len = _tokenIds.length;
         for (uint256 i; i < len; ++i) {
@@ -84,28 +91,42 @@ contract KinetexStaking is
             tokenIdToArrayIndex[_tokenIds[i]] = staker.stakedTokenIds.length - 1;
             stakerAddress[_tokenIds[i]] = msg.sender;
 
-            (uint256 dust, Levels.Level level) = _getTokenProperties(_tokenIds[i]);
-
-            uint256 dustPercentage = Levels._getDustPercentage(level, _months);
-            uint256 endTimestamp = _calculateEndTimeStamp(block.timestamp, _months);
-
-            uint256 rewardAmount = _calculateReward(dust, dustPercentage);
+            uint256 endTimestamp = _calculateEndTimeStamp(block.timestamp, _periods);
+            uint256 rewardAmount = _calculateReward(_tokenIds[i], _periods);
 
             staker.votingPower += rewardAmount;
             staker.timeOfLastUpdate = block.timestamp;
 
             tokenIdToStakingCondition[_tokenIds[i]] = StakingCondition(
                 _tokenIds[i],
-                rewardAmount,
                 block.timestamp,
-                endTimestamp
+                endTimestamp,
+                rewardAmount,
+                0,
+                0
             );
         }
+    }
+
+    function votingPower(address account) external view returns (uint256) {
+        Staker memory staker = stakers[account];
+
+        if (_rewardsToken == address(0)) {
+            return staker.votingPower;
+        }
+
+        return (IERC20(_rewardsToken).balanceOf(account) + staker.votingPower);
+    }
+
+    function votingPower721(address account) external view returns (uint256) {
+        Staker memory staker = stakers[account];
+        return staker.votingPower;
     }
 
     function withdraw(uint256[] calldata _tokenIds) external nonReentrant {
         Staker storage staker = stakers[msg.sender];
         require(staker.stakedTokenIds.length > 0, "KS: You have no tokens staked");
+        _updateRewards(msg.sender);
 
         uint256 lenToWithdraw = _tokenIds.length;
         for (uint256 i; i < lenToWithdraw; ++i) {
@@ -121,11 +142,7 @@ contract KinetexStaking is
 
             StakingCondition memory stakingCondition = tokenIdToStakingCondition[_tokenIds[i]];
             staker.stakedTokenIds.pop();
-            staker.votingPower -= stakingCondition.rewardAmount;
-
-            if (block.timestamp >= stakingCondition.endTimestamp) {
-                staker.unclaimedRewards += stakingCondition.rewardAmount;
-            }
+            staker.votingPower -= stakingCondition.totalRewards - stakingCondition.claimedRewards;
 
             delete stakerAddress[_tokenIds[i]];
             delete tokenIdToStakingCondition[_tokenIds[i]];
@@ -139,37 +156,86 @@ contract KinetexStaking is
         _rewardTokenDecimals = _decimals;
     }
 
-    function claimRewards() external ifRewardsTokenSet {
+    function claimRewards() external hasRewardToken {
         Staker storage staker = stakers[msg.sender];
 
+        _updateRewards(msg.sender);
+
         require(staker.unclaimedRewards > 0, "KS: No rewards to claim");
-        staker.timeOfLastUpdate = block.timestamp;
+
         uint256 rewards = staker.unclaimedRewards;
+
+        staker.timeOfLastUpdate = block.timestamp;
         staker.unclaimedRewards = 0;
+        staker.claimedRewards = rewards;
+
+        uint256 len = staker.stakedTokenIds.length;
+        if (len > 0) {
+            uint256[] memory tokenIds = staker.stakedTokenIds;
+
+            for (uint256 i; i < len; ++i) {
+                StakingCondition storage stakingCondition = tokenIdToStakingCondition[tokenIds[i]];
+                uint256 availableRewards = _availableRewards(stakingCondition, tokenIds[i]);
+                stakingCondition.claimedRewards = availableRewards;
+                staker.votingPower -= availableRewards;
+            }
+        }
 
         IERC20(_rewardsToken).safeTransfer(msg.sender, rewards);
     }
 
-    function _calculateReward(uint256 dust, uint256 dustPercentage)
+    function _updateRewards(address _staker) internal {
+        Staker storage staker = stakers[_staker];
+
+        uint256 len = staker.stakedTokenIds.length;
+        uint256[] memory tokenIds = staker.stakedTokenIds;
+        uint256 totalRewards = 0;
+
+        for (uint256 i; i < len; ++i) {
+            StakingCondition storage stakingCondition = tokenIdToStakingCondition[tokenIds[i]];
+            uint256 availableRewards = _availableRewards(stakingCondition, tokenIds[i]);
+            stakingCondition.unclaimedRewards = availableRewards;
+            totalRewards += availableRewards;
+        }
+
+        if (len > 0) {
+            staker.unclaimedRewards = totalRewards;
+            staker.timeOfLastUpdate = block.timestamp;
+        }
+    }
+
+    function _availableRewards(StakingCondition memory stakingCondition, uint256 tokenId)
         internal
         view
         returns (uint256)
     {
+        uint256 elapsedPeriods = _stakingPeriods(stakingCondition.startTimestamp, block.timestamp);
+        return (_calculateReward(tokenId, elapsedPeriods) - stakingCondition.claimedRewards);
+    }
+
+    function _calculateReward(uint256 _tokenId, uint256 _periods) internal view returns (uint256) {
+        (uint256 dust, Levels.Level level) = _getTokenProperties(_tokenId);
+        uint256 dustPercentage = Levels._getDustPercentage(level, _periods);
+
         return (((10**_rewardTokenDecimals) * dust) * dustPercentage) / 100;
     }
 
-    function _calculateEndTimeStamp(uint256 startTimeStamp, uint256 months)
+    function _calculateEndTimeStamp(uint256 startTimeStamp, uint256 periods)
         internal
         pure
         returns (uint256)
     {
-        return BASE_PERIOD * months + startTimeStamp;
+        return BASE_PERIOD * periods + startTimeStamp;
     }
 
     function _getTokenProperties(uint256 tokenId) internal view returns (uint256, Levels.Level) {
         uint256 _dust = IKinetexRewards(_nftCollection).getDust(tokenId);
         Levels.Level _level = Levels.getLevelByDustAmount(_dust);
         return (_dust, _level);
+    }
+
+    function _stakingPeriods(uint256 _startDate, uint256 _endDate) internal pure returns (uint256) {
+        return (_endDate - _startDate) / BASE_PERIOD;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
