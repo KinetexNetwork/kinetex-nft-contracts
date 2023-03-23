@@ -28,11 +28,11 @@ const config: HardhatUserConfig = {
             accounts: [
                 {
                     privateKey: process.env["DEPLOYER_PK"] || "",
-                    balance: "10000000000000000000000",
+                    balance: "593900000000000000",
                 },
                 {
                     privateKey: process.env["OWNER_PK"] || "",
-                    balance: "10000000000000000000000",
+                    balance: "593900000000000000",
                 },
                 {
                     privateKey: process.env["TESTER_PK"] || "",
@@ -43,10 +43,12 @@ const config: HardhatUserConfig = {
                 enabled: false,
                 url: process.env["TESTNET_RPC"] || "",
             },
+            // gasPrice: 30_000_000_000,
         },
         testnet: {
             url: process.env["TESTNET_RPC"] || "",
             accounts: process.env.DEPLOYER_PK !== undefined ? [process.env.DEPLOYER_PK] : [],
+            // gasPrice: 150_000_000_000,
         },
     },
     gasReporter: {
