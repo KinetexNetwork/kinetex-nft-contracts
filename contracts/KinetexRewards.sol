@@ -85,6 +85,10 @@ contract KinetexRewards is
         return _attributesByTokenId[tokenId].dust;
     }
 
+    function getAttributes(uint256 tokenId) external view returns (Attributes memory) {
+        return _attributesByTokenId[tokenId];
+    }
+
     function getNextTokenId() external view returns (uint256) {
         return _tokenIdCounter.current();
     }
