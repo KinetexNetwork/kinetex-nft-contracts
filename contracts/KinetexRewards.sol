@@ -19,21 +19,14 @@ contract KinetexRewards is
     AccessControlUpgradeable,
     UUPSUpgradeable
 {
-    /*///////////////////////////////////////////////////////////////
-                            Libraries
-    //////////////////////////////////////////////////////////////*/
-
     using CountersUpgradeable for CountersUpgradeable.Counter;
-
-    /*///////////////////////////////////////////////////////////////
-                            State variables / Mappings
-    //////////////////////////////////////////////////////////////*/
 
     CountersUpgradeable.Counter private _tokenIdCounter;
 
     bytes32 public constant MINTER_ROLE = keccak256(abi.encodePacked("MINTER_ROLE"));
     bytes32 public constant BURNER_ROLE = keccak256(abi.encodePacked("BURNER_ROLE"));
     string public baseURI;
+    string public contractMetadataURI;
 
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 
@@ -53,10 +46,6 @@ contract KinetexRewards is
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(BURNER_ROLE, msg.sender);
     }
-
-    /*///////////////////////////////////////////////////////////////
-                            External/Public Functions
-    //////////////////////////////////////////////////////////////*/
 
     function safeMint(address to, uint256 dust) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
@@ -87,6 +76,11 @@ contract KinetexRewards is
         emit SetBaseURI(uri);
     }
 
+    function setContractURI(string calldata uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        contractMetadataURI = uri;
+        emit SetContractURI(uri);
+    }
+
     function getDust(uint256 tokenId) external view returns (uint256) {
         return _attributesByTokenId[tokenId].dust;
     }
@@ -104,9 +98,9 @@ contract KinetexRewards is
         return super.supportsInterface(interfaceId);
     }
 
-    /*///////////////////////////////////////////////////////////////
-                            Internal Functions
-    //////////////////////////////////////////////////////////////*/
+    function contractURI() external view returns (string memory) {
+        return contractMetadataURI;
+    }
 
     function _baseURI() internal view override returns (string memory) {
         return baseURI;

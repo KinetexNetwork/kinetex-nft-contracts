@@ -13,6 +13,9 @@ interface IKinetexRewards {
     /// @dev Emitted when the baseURI us updated.
     event SetBaseURI(string uri);
 
+    /// @dev Emitted when the contractURI us updated.
+    event SetContractURI(string uri);
+
     /**
      *  @notice DUST NFT Attributes.
      *

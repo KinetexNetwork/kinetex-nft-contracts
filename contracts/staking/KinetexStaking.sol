@@ -51,6 +51,9 @@ contract KinetexStaking is
     mapping(uint256 => uint256) public tokenIdToArrayIndex;
     mapping(uint256 => StakingCondition) public tokenIdToStakingCondition;
 
+    event Stake(uint256[] tokenIds, address staker);
+    event Withdraw(uint256[] tokenIds, address staker);
+
     uint256[98] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -106,6 +109,8 @@ contract KinetexStaking is
                 0
             );
         }
+
+        emit Stake(_tokenIds, msg.sender);
     }
 
     function votingPower(address account) external view returns (uint256) {
@@ -149,6 +154,8 @@ contract KinetexStaking is
 
             IERC721(_nftCollection).transferFrom(address(this), msg.sender, _tokenIds[i]);
         }
+
+        emit Withdraw(_tokenIds, msg.sender);
     }
 
     function setRewardsToken(address _token, uint256 _decimals) external onlyOwner {

@@ -9,6 +9,7 @@ import "solidity-coverage";
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
+import "./tasks//";
 
 dotenv.config();
 

@@ -1,0 +1,8 @@
+{
+  "name": "Kinetex Network rewards",
+  "description": "Kinetex has the best stones in the world",
+  "image": "https://kinetex.io/kinetex-network.png",
+  "external_link": "https://kinetex.io/",
+  "seller_fee_basis_points": 0,
+  "fee_recipient": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+}
