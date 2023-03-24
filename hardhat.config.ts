@@ -13,8 +13,16 @@ import "./tasks//";
 
 dotenv.config();
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
+const forkingUrl = () => {
+    const isTestnet = !!process.env["IS_TESTNET"];
+    if (isTestnet) {
+        const polygon = process.env["MUMBAI_RPC"] ?? "";
+        const ethereum = process.env["GOERLI_RPC"] ?? "";
+        return process.env["CHAIN"] === "Polygon" ? polygon : ethereum;
+    }
+
+    return process.env["MAINNET_RPC"] ?? "";
+};
 
 const config: HardhatUserConfig = {
     solidity: "0.8.9",
@@ -41,14 +49,16 @@ const config: HardhatUserConfig = {
             ],
             forking: {
                 enabled: false,
-                url: process.env["TESTNET_RPC"] || "",
+                url: forkingUrl(),
             },
-            // gasPrice: 30_000_000_000,
         },
-        testnet: {
-            url: process.env["TESTNET_RPC"] || "",
+        mumbai: {
+            url: process.env["MUMBAI_RPC"] || "",
             accounts: process.env.DEPLOYER_PK !== undefined ? [process.env.DEPLOYER_PK] : [],
-            // gasPrice: 150_000_000_000,
+        },
+        goerli: {
+            url: process.env["GOERLI_RPC"] || "",
+            accounts: process.env.DEPLOYER_PK !== undefined ? [process.env.DEPLOYER_PK] : [],
         },
     },
     gasReporter: {
@@ -56,7 +66,11 @@ const config: HardhatUserConfig = {
         currency: "USD",
     },
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY,
+        apiKey: {
+            polygonMumbai: process.env["POLYGONSCAN_API_KEY"] ?? "",
+            goerli: process.env["ETHERSCAN_API_KEY"],
+            mainnet: process.env["ETHERSCAN_API_KEY"],
+        },
     },
 };
 

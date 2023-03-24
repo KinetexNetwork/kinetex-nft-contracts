@@ -8,13 +8,16 @@
     "test": "hardhat --network hardhat test",
     "deploy:hardhat": "hardhat clean && hardhat typechain && hardhat deploy --network hardhat",
     "deploy:localhost": "hardhat clean && hardhat typechain && hardhat deploy --network localhost",
-    "deploy:testnet": "hardhat clean && hardhat typechain && hardhat deploy --network testnet",
+    "deploy:mumbai": "hardhat clean && hardhat typechain && hardhat deploy --network mumbai",
+    "deploy:goerli": "hardhat clean && hardhat typechain && hardhat deploy --network goerli",
     "deploy:mainnet": "hardhat clean && hardhat typechain && hardhat deploy --network mainnet",
     "prettier:fix": "prettier -w contracts/**/*.sol",
     "prettier:check": "prettier -c contracts/**/*.sol",
     "typechain": "hardhat typechain",
     "coverage": "hardhat compile --config hardhat.test.config.ts && hardhat coverage --config hardhat.test.config.ts",
-    "verify:testnet": "hardhat etherscan-verify --network testnet",
+    "verify:mumbai": "hardhat etherscan-verify --network mumbai",
+    "verify:goerli": "hardhat etherscan-verify --network goerli",
+    "verify:mainnet": "hardhat etherscan-verify --network mainnet",
     "size": "hardhat size-contracts --no-compile"
   },
   "devDependencies": {

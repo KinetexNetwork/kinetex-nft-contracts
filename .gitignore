@@ -12,6 +12,10 @@ artifacts
 # Deployments
 deployments/*
 !deployments/mainnet
+!deployments/mumbai
+!deployments/goerli
 
 # OZ Upgrades
-.openzeppelin
+.openzeppelin/*
+!.openzeppelin/goerli.json
+!.openzeppelin/polygon-mumbai.json

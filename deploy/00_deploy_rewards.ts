@@ -1,11 +1,11 @@
 import type { DeployFunction } from "hardhat-deploy/types";
 import type { KinetexRewards, KinetexRewards__factory } from "../typechain";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
+import { BASE_URI, CONTRACT_URI } from "../helpers/constants";
 
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
-import { BASE_URI, CONTRACT_URI } from "../helpers/constants";
 
 const func: DeployFunction = async function ({ ethers, upgrades, deployments }: HardhatRuntimeEnvironment) {
     const rewardsFactory: KinetexRewards__factory = await ethers.getContractFactory("KinetexRewards");
@@ -20,6 +20,8 @@ const func: DeployFunction = async function ({ ethers, upgrades, deployments }: 
 
     await rewards.setContractURI(CONTRACT_URI);
     await rewards.setBaseURI(BASE_URI);
+
+    await deployments.save("KinetexRewards__implementation", deployment);
     await deployments.save("KinetexRewards", deployment);
 };
 
