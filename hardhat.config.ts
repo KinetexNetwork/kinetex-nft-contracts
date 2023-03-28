@@ -30,6 +30,7 @@ const config: HardhatUserConfig = {
         deployer: process.env["DEPLOYER_ADDRESS"] || "",
         owner: process.env["OWNER_ADDRESS"] || "",
         tester: process.env["TESTER_ADDRESS"] || "",
+        issuer: process.env["ISSUER_ADDRESS"] || "",
     },
     networks: {
         hardhat: {
@@ -44,6 +45,10 @@ const config: HardhatUserConfig = {
                 },
                 {
                     privateKey: process.env["TESTER_PK"] || "",
+                    balance: "10000000000000000000000",
+                },
+                {
+                    privateKey: process.env["ISSUER_PK"] || "",
                     balance: "10000000000000000000000",
                 },
             ],

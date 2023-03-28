@@ -13,7 +13,7 @@ describe("KinetexStaking tests", function () {
     let rewardToken: MockERC20;
 
     const setupTest = deployments.createFixture(async ({ ethers }) => {
-        await deployments.fixture();
+        await deployments.fixture("deployment");
 
         const rewardsDeployment = await deployments.get("KinetexRewards");
         rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;

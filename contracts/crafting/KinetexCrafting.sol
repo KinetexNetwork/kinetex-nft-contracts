@@ -46,7 +46,7 @@ contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         kinetexRewards.burn(tokenA);
         kinetexRewards.burn(tokenB);
-        kinetexRewards.safeMint(msg.sender, totalDust);
+        kinetexRewards.safeMintPriveleged(msg.sender, totalDust);
 
         emit Craft(tokenA, tokenB, tokenId);
     }

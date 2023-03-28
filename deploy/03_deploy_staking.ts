@@ -6,7 +6,13 @@ import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
 
-const func: DeployFunction = async function ({ ethers, upgrades, deployments }: HardhatRuntimeEnvironment) {
+const func: DeployFunction = async function ({
+    ethers,
+    upgrades,
+    deployments,
+    getNamedAccounts,
+}: HardhatRuntimeEnvironment) {
+    const { owner } = await getNamedAccounts();
     const rewardsDeployment = await deployments.get("KinetexRewards");
 
     const stakingFactory: KinetexStaking__factory = await ethers.getContractFactory("KinetexStaking");
@@ -19,8 +25,10 @@ const func: DeployFunction = async function ({ ethers, upgrades, deployments }: 
         ...artifact,
     };
 
+    await staking.transferOwnership(owner);
+
     await deployments.save("KinetexStaking", deployment);
 };
 
 export default func;
-func.tags = ["Staking"];
+func.tags = ["deployment", "Staking"];

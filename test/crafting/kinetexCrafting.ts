@@ -11,7 +11,7 @@ describe("KinetexCrafting tests", function () {
     let crafting: KinetexCrafting;
 
     const setupTest = deployments.createFixture(async ({ ethers, upgrades }) => {
-        await deployments.fixture();
+        await deployments.fixture("deployment");
 
         const rewardsDeployment = await deployments.get("KinetexRewards");
         rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;

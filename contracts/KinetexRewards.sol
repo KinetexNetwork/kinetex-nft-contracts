@@ -10,6 +10,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 
 import {Levels} from "./libraries/Levels.sol";
 import {IKinetexRewards} from "./IKinetexRewards.sol";
+import {ISignatureManager} from "./cryptography/ISignatureManager.sol";
 
 contract KinetexRewards is
     IKinetexRewards,
@@ -28,6 +29,8 @@ contract KinetexRewards is
     string public baseURI;
     string public contractMetadataURI;
 
+    address private _signatureManager;
+
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 
     uint256[96] private __gap;
@@ -37,7 +40,7 @@ contract KinetexRewards is
         _disableInitializers();
     }
 
-    function initialize() public initializer {
+    function initialize(address signatureManager) public initializer {
         __ERC721_init("Kinetex Rewards", "KTXR");
         __ERC721Burnable_init();
         __AccessControl_init();
@@ -45,48 +48,56 @@ contract KinetexRewards is
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(BURNER_ROLE, msg.sender);
+
+        _signatureManager = signatureManager;
     }
 
-    function safeMint(address to, uint256 dust) public onlyRole(MINTER_ROLE) {
-        uint256 tokenId = _tokenIdCounter.current();
-        Levels.Level level = Levels.getLevelByDustAmount(dust);
+    function safeMint(
+        address _to,
+        uint256 _dust,
+        bytes calldata _signature
+    ) external {
+        require(
+            ISignatureManager(_signatureManager).verifySpending(_to, _dust, _signature) == true,
+            "KR: Issuer signature mismatch"
+        );
+        ISignatureManager(_signatureManager).useSignature(_signature);
 
-        _attributesByTokenId[tokenId] = Attributes(level, dust);
-
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-
-        emit Mint(tokenId, Attributes(level, dust));
+        _setAttributesAndMint(_to, _dust);
     }
 
-    function burn(uint256 tokenId) public override(ERC721BurnableUpgradeable, IKinetexRewards) {
-        delete _attributesByTokenId[tokenId];
-        super.burn(tokenId);
-        emit Burn(tokenId);
+    function safeMintPriveleged(address _to, uint256 _dust) external onlyRole(MINTER_ROLE) {
+        _setAttributesAndMint(_to, _dust);
     }
 
-    function burnPriveleged(uint256 tokenId) external onlyRole(BURNER_ROLE) {
-        delete _attributesByTokenId[tokenId];
-        _burn(tokenId);
-        emit Burn(tokenId);
+    function burn(uint256 _tokenId) public override(ERC721BurnableUpgradeable, IKinetexRewards) {
+        delete _attributesByTokenId[_tokenId];
+        super.burn(_tokenId);
+        emit Burn(_tokenId);
     }
 
-    function setBaseURI(string calldata uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        baseURI = uri;
-        emit SetBaseURI(uri);
+    function burnPriveleged(uint256 _tokenId) external onlyRole(BURNER_ROLE) {
+        delete _attributesByTokenId[_tokenId];
+        _burn(_tokenId);
+        emit Burn(_tokenId);
     }
 
-    function setContractURI(string calldata uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        contractMetadataURI = uri;
-        emit SetContractURI(uri);
+    function setBaseURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        baseURI = _uri;
+        emit SetBaseURI(_uri);
     }
 
-    function getDust(uint256 tokenId) external view returns (uint256) {
-        return _attributesByTokenId[tokenId].dust;
+    function setContractURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        contractMetadataURI = _uri;
+        emit SetContractURI(_uri);
     }
 
-    function getAttributes(uint256 tokenId) external view returns (Attributes memory) {
-        return _attributesByTokenId[tokenId];
+    function getDust(uint256 _tokenId) external view returns (uint256) {
+        return _attributesByTokenId[_tokenId].dust;
+    }
+
+    function getAttributes(uint256 _tokenId) external view returns (Attributes memory) {
+        return _attributesByTokenId[_tokenId];
     }
 
     function getNextTokenId() external view returns (uint256) {
@@ -104,6 +115,18 @@ contract KinetexRewards is
 
     function contractURI() external view returns (string memory) {
         return contractMetadataURI;
+    }
+
+    function _setAttributesAndMint(address _to, uint256 _dust) internal {
+        uint256 tokenId = _tokenIdCounter.current();
+        Levels.Level level = Levels.getLevelByDustAmount(_dust);
+
+        _attributesByTokenId[tokenId] = Attributes(level, _dust);
+
+        _tokenIdCounter.increment();
+        _safeMint(_to, tokenId);
+
+        emit Mint(tokenId, Attributes(level, _dust));
     }
 
     function _baseURI() internal view override returns (string memory) {

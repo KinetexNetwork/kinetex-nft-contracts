@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getNamedAccounts, deployments, ethers } from "hardhat";
-import { Level, MINTER_ROLE, BURNER_ROLE, mint } from "../helpers";
+import { Level, MINTER_ROLE, BURNER_ROLE, mint, grantReward } from "../helpers";
 
 import type { KinetexRewards } from "../typechain";
 
@@ -9,7 +9,7 @@ describe("KinetexRewards tests", function () {
     let rewards: KinetexRewards;
 
     const setupTest = deployments.createFixture(async ({ ethers, deployments }) => {
-        await deployments.fixture();
+        await deployments.fixture("deployment");
         const rewardsDeployment = await deployments.get("KinetexRewards");
         rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;
     });
@@ -30,10 +30,31 @@ describe("KinetexRewards tests", function () {
         });
     });
 
+    describe("Issuer", () => {
+        let signature: string = "init signature";
+        it("Can't mint with a random signature", async () => {
+            const { tester } = await getNamedAccounts();
+            await expect(rewards.safeMint(tester, BigNumber.from("300"), signature)).to.be.reverted;
+        });
+
+        it("A random EOA can mint with issuer's signature", async () => {
+            const { tester } = await getNamedAccounts();
+            signature = await grantReward(tester, "300");
+            expect(await rewards.safeMint(tester, BigNumber.from("300"), signature))
+                .to.emit(rewards, "Mint")
+                .withArgs(0, { level: Level.DUST, dust: BigNumber.from("300") });
+        });
+
+        it("Can't use the signature twice", async () => {
+            const { tester } = await getNamedAccounts();
+            await expect(rewards.safeMint(tester, BigNumber.from("300"), signature)).to.be.reverted;
+        });
+    });
+
     describe("Minting", () => {
         it("Mints NFTs", async () => {
             const { deployer } = await getNamedAccounts();
-            expect(await rewards.safeMint(deployer, BigNumber.from("33")))
+            expect(await rewards.safeMintPriveleged(deployer, BigNumber.from("33")))
                 .to.emit(rewards, "Mint")
                 .withArgs(0, { level: Level.DUST, dust: BigNumber.from("33") });
         });
@@ -41,7 +62,7 @@ describe("KinetexRewards tests", function () {
         it("Mints DUST token", async () => {
             const { deployer } = await getNamedAccounts();
             const dust = BigNumber.from("3");
-            const tx = await rewards.safeMint(deployer, dust);
+            const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
             expect(args.attributes.level).to.eq(Level.DUST);
@@ -51,7 +72,7 @@ describe("KinetexRewards tests", function () {
         it("Mints GEM token", async () => {
             const { deployer } = await getNamedAccounts();
             const dust = BigNumber.from("33");
-            const tx = await rewards.safeMint(deployer, dust);
+            const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
             expect(args.attributes.level).to.eq(Level.GEM);
@@ -61,7 +82,7 @@ describe("KinetexRewards tests", function () {
         it("Mints CRYSTAL token", async () => {
             const { deployer } = await getNamedAccounts();
             const dust = BigNumber.from("333");
-            const tx = await rewards.safeMint(deployer, dust);
+            const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
             expect(args.attributes.level).to.eq(Level.CRYSTAL);
@@ -71,7 +92,7 @@ describe("KinetexRewards tests", function () {
         it("Mints LIGHTNING token", async () => {
             const { deployer } = await getNamedAccounts();
             const dust = BigNumber.from("3333");
-            const tx = await rewards.safeMint(deployer, dust);
+            const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
             expect(args.attributes.level).to.eq(Level.LIGHTNING);

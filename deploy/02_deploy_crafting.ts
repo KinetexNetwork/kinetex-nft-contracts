@@ -7,7 +7,14 @@ import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
 import { BURNER_ROLE, MINTER_ROLE } from "../helpers/roles";
 
-const func: DeployFunction = async function ({ ethers, upgrades, deployments }: HardhatRuntimeEnvironment) {
+const func: DeployFunction = async function ({
+    ethers,
+    upgrades,
+    deployments,
+    getNamedAccounts,
+}: HardhatRuntimeEnvironment) {
+    const { owner } = await getNamedAccounts();
+
     const rewardsDeployment = await deployments.get("KinetexRewards");
     const rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;
 
@@ -23,9 +30,10 @@ const func: DeployFunction = async function ({ ethers, upgrades, deployments }: 
 
     await rewards.grantRole(MINTER_ROLE, crafting.address);
     await rewards.grantRole(BURNER_ROLE, crafting.address);
+    await crafting.transferOwnership(owner);
 
     await deployments.save("KinetexCrafting", deployment);
 };
 
 export default func;
-func.tags = ["Crafting"];
+func.tags = ["deployment", "Crafting"];
