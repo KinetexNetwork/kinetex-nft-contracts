@@ -14,6 +14,12 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {Levels} from "../libraries/Levels.sol";
 import {IKinetexRewards} from "../IKinetexRewards.sol";
 
+/**
+ * @title                   Kinetex Staking
+ * @author                  Kinetex Team
+ * @notice                  Allows Kinetex Rewards holders stake their tokens to get access to Kinetex DAO.
+ * @custom:security-contact semkin.eth@gmail.com
+ **/
 contract KinetexStaking is
     Initializable,
     OwnableUpgradeable,
@@ -61,11 +67,19 @@ contract KinetexStaking is
         _disableInitializers();
     }
 
+    /**
+     *  @notice Modifier for functions that are only available when the rewards token is set.
+     */
     modifier hasRewardToken() {
         require(_rewardsToken != address(0), "KS: Reward token not set");
         _;
     }
 
+    /**
+     *  @notice                 Initialize the contract and grant roles to the deployer
+     *  @dev                    Reward token is not initialized, but decimals are needed for correct voting power calculations
+     *  @param nftCollection    KinetexRewards deployed instance
+     */
     function initialize(address nftCollection) public initializer {
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -75,6 +89,12 @@ contract KinetexStaking is
         _rewardTokenDecimals = 18;
     }
 
+    /**
+     *  @notice             Stakes an array of tokenIds
+     *  @dev                Periods are used to calculate the initial voting power for a staker.
+     *  @param _tokenIds    TokenIds to stake
+     *  @param _periods     How many periods a user wants to stake. Refer to BASE_PERIOD.
+     */
     function stake(uint256[] calldata _tokenIds, uint256 _periods) external {
         Staker storage staker = stakers[msg.sender];
 
@@ -113,6 +133,11 @@ contract KinetexStaking is
         emit Stake(_tokenIds, msg.sender);
     }
 
+    /**
+     *  @notice         Voting power calulation
+     *  @dev            If the token exists, power received on market purchase of token is added
+     *  @param account  Address to calculate the voting power for
+     */
     function votingPower(address account) external view returns (uint256) {
         Staker memory staker = stakers[account];
 
@@ -123,11 +148,19 @@ contract KinetexStaking is
         return (IERC20(_rewardsToken).balanceOf(account) + staker.votingPower);
     }
 
+    /**
+     *  @notice         Pure NFT voting power
+     *  @dev            This function might be needed in the transition period when the rewardsToken is set
+     */
     function votingPower721(address account) external view returns (uint256) {
         Staker memory staker = stakers[account];
         return staker.votingPower;
     }
 
+    /**
+     *  @notice             Withdraws the staked tokenIds
+     *  @param _tokenIds    TokenIds to withdraw
+     */
     function withdraw(uint256[] calldata _tokenIds) external nonReentrant {
         Staker storage staker = stakers[msg.sender];
         require(staker.stakedTokenIds.length > 0, "KS: You have no tokens staked");
@@ -158,11 +191,19 @@ contract KinetexStaking is
         emit Withdraw(_tokenIds, msg.sender);
     }
 
+    /**
+     *  @notice             Sets the reward token
+     *  @param _token       Address of the ERC20 token instance
+     *  @param _decimals    Decimals of the token
+     */
     function setRewardsToken(address _token, uint256 _decimals) external onlyOwner {
         _rewardsToken = _token;
         _rewardTokenDecimals = _decimals;
     }
 
+    /**
+     *  @notice If the rewards token is set, allows to claim accumulated rewards
+     */
     function claimRewards() external hasRewardToken {
         Staker storage staker = stakers[msg.sender];
 
@@ -191,6 +232,10 @@ contract KinetexStaking is
         IERC20(_rewardsToken).safeTransfer(msg.sender, rewards);
     }
 
+    /**
+     *  @dev            Reward calculation triggered on a staker state update.
+     *  @param _staker  Staker address
+     */
     function _updateRewards(address _staker) internal {
         Staker storage staker = stakers[_staker];
 
@@ -211,6 +256,11 @@ contract KinetexStaking is
         }
     }
 
+    /**
+     *  @dev                     Calculates accumulated rewards in the current time
+     *  @param stakingCondition  Staking configuration of the token
+     *  @param tokenId           tokenId
+     */
     function _availableRewards(StakingCondition memory stakingCondition, uint256 tokenId)
         internal
         view
@@ -220,6 +270,11 @@ contract KinetexStaking is
         return (_calculateReward(tokenId, elapsedPeriods) - stakingCondition.claimedRewards);
     }
 
+    /**
+     *  @dev                     Calculates accumulated rewards for a given amount of time
+     *  @param _tokenId          tokenId
+     *  @param _periods          Ellapsed periods. Refer to BASE_PERIOD
+     */
     function _calculateReward(uint256 _tokenId, uint256 _periods) internal view returns (uint256) {
         (uint256 dust, Levels.Level level) = _getTokenProperties(_tokenId);
         uint256 dustPercentage = Levels._getDustPercentage(level, _periods);
@@ -227,6 +282,11 @@ contract KinetexStaking is
         return (((10**_rewardTokenDecimals) * dust) * dustPercentage) / 100;
     }
 
+    /**
+     *  @dev                     Calculates the timestamp for the end of staking
+     *  @param startTimeStamp    Unix timestamp of staking start
+     *  @param periods           How many periods to stake for
+     */
     function _calculateEndTimeStamp(uint256 startTimeStamp, uint256 periods)
         internal
         pure
@@ -235,15 +295,27 @@ contract KinetexStaking is
         return BASE_PERIOD * periods + startTimeStamp;
     }
 
+    /**
+     *  @dev              Retrieves the onchain metadata for a given tokenId
+     *  @param tokenId    tokenId
+     */
     function _getTokenProperties(uint256 tokenId) internal view returns (uint256, Levels.Level) {
         uint256 _dust = IKinetexRewards(_nftCollection).getDust(tokenId);
         Levels.Level _level = Levels.getLevelByDustAmount(_dust);
         return (_dust, _level);
     }
 
+    /**
+     *  @dev                 Calculates the amount of staking periods between two dates
+     *  @param _startDate    Start date Unix timestamp. Should be less than _endDate
+     *  @param _endDate      Start date Unix timestamp. Should be greater than _startDate
+     */
     function _stakingPeriods(uint256 _startDate, uint256 _endDate) internal pure returns (uint256) {
         return (_endDate - _startDate) / BASE_PERIOD;
     }
 
+    /**
+     *  @dev UUPS proxy upgrade
+     */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

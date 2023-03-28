@@ -9,6 +9,7 @@ import "solidity-coverage";
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
+import "hardhat-docgen";
 import "./tasks//";
 
 dotenv.config();
@@ -76,6 +77,12 @@ const config: HardhatUserConfig = {
             goerli: process.env["ETHERSCAN_API_KEY"],
             mainnet: process.env["ETHERSCAN_API_KEY"],
         },
+    },
+    docgen: {
+        path: "./docs",
+        clear: true,
+        runOnCompile: false,
+        except: ["^contracts/mock/*"],
     },
 };
 

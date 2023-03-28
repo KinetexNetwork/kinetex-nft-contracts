@@ -34,20 +34,22 @@ describe("KinetexRewards tests", function () {
         let signature: string = "init signature";
         it("Can't mint with a random signature", async () => {
             const { tester } = await getNamedAccounts();
-            await expect(rewards.safeMint(tester, BigNumber.from("300"), signature)).to.be.reverted;
+            await expect(rewards.safeMint(tester, BigNumber.from("300"), BigNumber.from("0"), signature)).to.be
+                .reverted;
         });
 
         it("A random EOA can mint with issuer's signature", async () => {
             const { tester } = await getNamedAccounts();
-            signature = await grantReward(tester, "300");
-            expect(await rewards.safeMint(tester, BigNumber.from("300"), signature))
+            signature = await grantReward(tester, "300", "0");
+            expect(await rewards.safeMint(tester, BigNumber.from("300"), BigNumber.from("300"), signature))
                 .to.emit(rewards, "Mint")
                 .withArgs(0, { level: Level.DUST, dust: BigNumber.from("300") });
         });
 
         it("Can't use the signature twice", async () => {
             const { tester } = await getNamedAccounts();
-            await expect(rewards.safeMint(tester, BigNumber.from("300"), signature)).to.be.reverted;
+            await expect(rewards.safeMint(tester, BigNumber.from("300"), BigNumber.from("300"), signature)).to.be
+                .reverted;
         });
     });
 
