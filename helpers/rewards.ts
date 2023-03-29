@@ -14,7 +14,10 @@ export const mint = async (rewards: KinetexRewards, dustAmt: string): Promise<Re
 export const grantReward = async (to: string, dust: string, nonce: string): Promise<string> => {
     const { issuer } = await getNamedAccounts();
     const signer = ethers.provider.getSigner(issuer);
-    const message = ethers.utils.solidityPack(["address", "uint256", "uint256"], [to, BigNumber.from(dust), nonce]);
+    const message = ethers.utils.solidityPack(
+        ["address", "uint256", "uint256"],
+        [to, BigNumber.from(dust), BigNumber.from(nonce)]
+    );
     const hash = ethers.utils.solidityKeccak256(["bytes"], [message]);
     return await signer.signMessage(ethers.utils.arrayify(hash));
 };

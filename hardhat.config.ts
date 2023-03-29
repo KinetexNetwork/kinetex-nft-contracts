@@ -9,7 +9,7 @@ import "solidity-coverage";
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
-import "hardhat-docgen";
+import "solidity-docgen";
 import "./tasks//";
 
 dotenv.config();
@@ -79,10 +79,8 @@ const config: HardhatUserConfig = {
         },
     },
     docgen: {
-        path: "./docs",
-        clear: true,
-        runOnCompile: false,
-        except: ["^contracts/mock/*"],
+        outputDir: "docs",
+        pages: "files",
     },
 };
 

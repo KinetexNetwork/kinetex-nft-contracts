@@ -117,7 +117,7 @@ contract KinetexRewards is
      */
     function setBaseURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseURI = _uri;
-        emit BatchMetadataUpdate(0, _tokenIdCounter.current() - 1);
+        emit BatchMetadataUpdate(0, _tokenIdCounter.current());
         emit SetBaseURI(_uri);
     }
 

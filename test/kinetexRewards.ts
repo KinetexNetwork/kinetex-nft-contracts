@@ -40,8 +40,13 @@ describe("KinetexRewards tests", function () {
 
         it("A random EOA can mint with issuer's signature", async () => {
             const { tester } = await getNamedAccounts();
-            signature = await grantReward(tester, "300", "0");
-            expect(await rewards.safeMint(tester, BigNumber.from("300"), BigNumber.from("300"), signature))
+            const testerSigner = await ethers.getSigner(tester);
+            const validSig = await grantReward(tester, "300", "0");
+            expect(
+                await rewards
+                    .connect(testerSigner)
+                    .safeMint(tester, BigNumber.from("300"), BigNumber.from("0"), validSig)
+            )
                 .to.emit(rewards, "Mint")
                 .withArgs(0, { level: Level.DUST, dust: BigNumber.from("300") });
         });
