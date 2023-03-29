@@ -7,10 +7,12 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 import {Levels} from "./libraries/Levels.sol";
 import {IKinetexRewards} from "./IKinetexRewards.sol";
 import {ISignatureManager} from "./cryptography/ISignatureManager.sol";
+import {IERC4906} from "./eip/IERC4906.sol";
 
 /**
  * @title                   Kinetex Rewards
@@ -23,6 +25,7 @@ contract KinetexRewards is
     Initializable,
     ERC721Upgradeable,
     ERC721BurnableUpgradeable,
+    IERC4906,
     AccessControlUpgradeable,
     UUPSUpgradeable
 {
@@ -36,6 +39,7 @@ contract KinetexRewards is
     string public contractMetadataURI;
 
     address private _signatureManager;
+    address private _stakingContract;
 
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 
@@ -113,6 +117,7 @@ contract KinetexRewards is
      */
     function setBaseURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseURI = _uri;
+        emit BatchMetadataUpdate(0, _tokenIdCounter.current() - 1);
         emit SetBaseURI(_uri);
     }
 
@@ -122,6 +127,14 @@ contract KinetexRewards is
     function setContractURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         contractMetadataURI = _uri;
         emit SetContractURI(_uri);
+    }
+
+    /**
+     *  @notice                 Sets the staking contract.
+     *  @param stakingContract  Address of the KinetexStaking instance
+     */
+    function setStakingContract(address stakingContract) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _stakingContract = stakingContract;
     }
 
     /**
@@ -154,7 +167,7 @@ contract KinetexRewards is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, AccessControlUpgradeable)
+        override(ERC721Upgradeable, AccessControlUpgradeable, IERC165)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
