@@ -8,21 +8,22 @@ interface ISignatureManager {
      *  @param _attribute     Onchain attribute to verify.
      *  @param _nonce         Allows to make a new valid signature for the same values.
      *  @param _signature     Hash of solidityPack(["address _to", "uint256 _attribute", "uint256 _nonce"] signed by the issuer.
-     *  @param _consumerId    Consumer identificator
+     *  @param _consumer      Consumer address
      */
     function verifySignature(
         address _to,
         uint256 _attribute,
         uint256 _nonce,
         bytes calldata _signature,
-        uint256 _consumerId
+        address _consumer
     ) external view returns (bool);
 
     /**
      *  @notice               Registeres a consumer
      *  @param _consumer      Consumer address
+     *  @param _issuer        Issuer address
      */
-    function registerConsumer(address _consumer) external;
+    function registerConsumer(address _consumer, address _issuer) external;
 
     /**
      *  @notice               Sets the signature as used.
@@ -31,21 +32,8 @@ interface ISignatureManager {
     function useSignature(bytes calldata _signature) external;
 
     /**
-     *  @notice               Allows admin account to set the issuer for a consumer
-     *  @param _issuer        Signature provider EOA address
-     *  @param _consumer      Consumer contract address
-     */
-    function setIssuerForConsumer(address _issuer, address _consumer) external;
-
-    /**
      *  @notice               Allows the consumer contract to set the issuer
      *  @param _issuer        Signature provider EOA address
      */
     function setIssuer(address _issuer) external;
-
-    /**
-     *  @notice               Allows to look up consumerId
-     *  @param _consumer      Consumer contract address
-     */
-    function getConsumerId(address _consumer) external returns (uint256);
 }

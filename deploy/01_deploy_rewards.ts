@@ -34,8 +34,7 @@ const func: DeployFunction = async function ({
     await rewards.grantRole(DEFAULT_ADMIN_ROLE, owner);
 
     await manager.grantRole(CONSUMER_ROLE, rewards.address);
-    await (await manager.registerConsumer(rewards.address)).wait(1);
-    await manager.setIssuerForConsumer(ISSUER_ADDRESS, rewards.address);
+    await (await manager.registerConsumer(rewards.address, ISSUER_ADDRESS)).wait(1);
 
     await deployments.save("KinetexRewards", deployment);
 };

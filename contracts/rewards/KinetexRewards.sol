@@ -87,10 +87,9 @@ contract KinetexRewards is
         bytes calldata _signature
     ) external {
         ISignatureManager signatureManager = ISignatureManager(_signatureManager);
-        uint256 _consumerId = signatureManager.getConsumerId(address(this));
 
         require(
-            signatureManager.verifySignature(_to, _dust, _nonce, _signature, _consumerId) == true,
+            signatureManager.verifySignature(_to, _dust, _nonce, _signature, address(this)) == true,
             "KR: Issuer signature mismatch"
         );
 
