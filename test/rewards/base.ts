@@ -34,7 +34,7 @@ describe("KinetexRewards base logic tests", function () {
         });
     });
 
-    describe("Issuer", () => {
+    describe("Signature Mint", () => {
         let signature: string = "init signature";
         it("Can't mint with a random signature", async () => {
             const { tester } = await getNamedAccounts();

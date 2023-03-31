@@ -1,7 +1,7 @@
 import type { DeployFunction } from "hardhat-deploy/types";
 import type { KinetexRewards, KinetexRewards__factory, SignatureManager } from "../typechain";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import { BASE_URI, CONTRACT_URI, ISSUER_ADDRESS } from "../helpers/constants";
+import { REWARDS_BASE_URI, REWARDS_CONTRACT_URI, ISSUER_ADDRESS } from "../helpers/constants";
 import { DEFAULT_ADMIN_ROLE, CONSUMER_ROLE } from "../helpers/roles";
 
 import "hardhat-deploy";
@@ -29,8 +29,8 @@ const func: DeployFunction = async function ({
         ...artifact,
     };
 
-    await rewards.setContractURI(CONTRACT_URI);
-    await rewards.setBaseURI(BASE_URI);
+    await rewards.setContractURI(REWARDS_CONTRACT_URI);
+    await rewards.setBaseURI(REWARDS_BASE_URI);
     await rewards.grantRole(DEFAULT_ADMIN_ROLE, owner);
 
     await manager.grantRole(CONSUMER_ROLE, rewards.address);
