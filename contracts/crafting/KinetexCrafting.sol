@@ -6,7 +6,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import {IKinetexRewards} from "../IKinetexRewards.sol";
+import {IKinetexRewards} from "../rewards/IKinetexRewards.sol";
 import {Levels} from "../libraries/Levels.sol";
 
 /**
@@ -57,7 +57,8 @@ contract KinetexCrafting is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             "KC: Not the owner of tokenB"
         );
 
-        uint256 totalDust = kinetexRewards.getDust(_tokenA) + kinetexRewards.getDust(_tokenB);
+        uint256 totalDust = kinetexRewards.getAttributes(_tokenA).dust +
+            kinetexRewards.getAttributes(_tokenB).dust;
         uint256 tokenId = kinetexRewards.getNextTokenId();
 
         kinetexRewards.burn(_tokenA);

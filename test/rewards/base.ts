@@ -1,17 +1,21 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getNamedAccounts, deployments, ethers } from "hardhat";
-import { Level, MINTER_ROLE, BURNER_ROLE, mint, grantReward } from "../helpers";
+import { Level, MINTER_ROLE, BURNER_ROLE, mint, grantReward } from "../../helpers";
 
-import type { KinetexRewards } from "../typechain";
+import type { KinetexRewards } from "../../typechain";
 
-describe("KinetexRewards tests", function () {
+describe("KinetexRewards base logic tests", function () {
     let rewards: KinetexRewards;
 
     const setupTest = deployments.createFixture(async ({ ethers, deployments }) => {
         await deployments.fixture("deployment");
         const rewardsDeployment = await deployments.get("KinetexRewards");
         rewards = (await ethers.getContractAt("KinetexRewards", rewardsDeployment.address)) as KinetexRewards;
+        const locked = await rewards.contractLocked();
+        if (locked) {
+            await rewards.unlock();
+        }
     });
 
     this.beforeAll(async () => {
@@ -41,11 +45,11 @@ describe("KinetexRewards tests", function () {
         it("A random EOA can mint with issuer's signature", async () => {
             const { tester } = await getNamedAccounts();
             const testerSigner = await ethers.getSigner(tester);
-            const validSig = await grantReward(tester, "300", "0");
+            signature = await grantReward(tester, "300", "0");
             expect(
                 await rewards
                     .connect(testerSigner)
-                    .safeMint(tester, BigNumber.from("300"), BigNumber.from("0"), validSig)
+                    .safeMint(tester, BigNumber.from("300"), BigNumber.from("0"), signature)
             )
                 .to.emit(rewards, "Mint")
                 .withArgs(0, { level: Level.DUST, dust: BigNumber.from("300") });

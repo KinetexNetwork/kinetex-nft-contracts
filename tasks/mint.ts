@@ -10,7 +10,7 @@ task("mint", "Mint a token")
         }
         const { deployer } = await hre.getNamedAccounts();
         const collection = await hre.ethers.getContractAt("KinetexRewards", rewardsDeployment.address);
-        const tx = await collection.safeMint(deployer, parseInt(taskArgs.dust, 10));
+        const tx = await collection.safeMintPriveleged(deployer, parseInt(taskArgs.dust, 10));
         const receipt = await tx.wait();
 
         for (const event of receipt.events!) {

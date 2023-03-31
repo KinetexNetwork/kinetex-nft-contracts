@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getNamedAccounts, deployments } from "hardhat";
-import { BURNER_ROLE, Level, mint, MINTER_ROLE } from "../../helpers";
+import { BURNER_ROLE, forceUnlocked, Level, mint, MINTER_ROLE } from "../../helpers";
 import { ethers } from "hardhat";
 
 import type { KinetexCrafting, KinetexRewards } from "../../typechain";
@@ -10,7 +10,7 @@ describe("KinetexCrafting tests", function () {
     let rewards: KinetexRewards;
     let crafting: KinetexCrafting;
 
-    const setupTest = deployments.createFixture(async ({ ethers, upgrades }) => {
+    const setupTest = deployments.createFixture(async ({ ethers }) => {
         await deployments.fixture("deployment");
 
         const rewardsDeployment = await deployments.get("KinetexRewards");
@@ -18,6 +18,8 @@ describe("KinetexCrafting tests", function () {
 
         const craftingDeployment = await deployments.get("KinetexCrafting");
         crafting = (await ethers.getContractAt("KinetexCrafting", craftingDeployment.address)) as KinetexCrafting;
+
+        await forceUnlocked(rewards);
     });
 
     this.beforeAll(async () => {
@@ -66,7 +68,7 @@ describe("KinetexCrafting tests", function () {
                 // deployer now has 1 nft
                 expect(await rewards.balanceOf(deployer)).to.eq(BigNumber.from("1"));
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect(await rewards.getDust(tokenId)).to.eq(BigNumber.from("11"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("11"));
             });
 
             it("Burns received DUST nfts", async () => {
@@ -107,7 +109,7 @@ describe("KinetexCrafting tests", function () {
                 const tokenId = args3.tokenId;
 
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect(await rewards.getDust(tokenId)).to.eq(BigNumber.from("121"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("121"));
             });
         });
 
@@ -140,7 +142,7 @@ describe("KinetexCrafting tests", function () {
                 const tokenId = args3.tokenId;
 
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect(await rewards.getDust(tokenId)).to.eq(BigNumber.from("1221"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("1221"));
             });
         });
     });

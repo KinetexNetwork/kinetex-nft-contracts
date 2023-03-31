@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import {Levels} from "./libraries/Levels.sol";
+import {Levels} from "../libraries/Levels.sol";
 
 interface IKinetexRewards {
     /// @dev Emitted when an NFT is minted.
@@ -78,9 +78,9 @@ interface IKinetexRewards {
 
     /**
      *  @notice          Returns a token's Power.
-     *  @param _tokenId  token _o check.
+     *  @param _tokenId  token to check.
      */
-    function getDust(uint256 _tokenId) external view returns (uint256);
+    function getAttributes(uint256 _tokenId) external view returns (Attributes memory);
 
     /**
      *  @notice Returns the ID that will be assigned to the next minted NFT.

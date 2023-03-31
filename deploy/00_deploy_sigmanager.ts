@@ -5,8 +5,7 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
-import { ISSUER_ADDRESS } from "../helpers/constants";
-import { DEFAULT_ADMIN_ROLE, MANAGER_ROLE } from "../helpers/roles";
+import { DEFAULT_ADMIN_ROLE } from "../helpers/roles";
 
 const func: DeployFunction = async function ({
     ethers,
@@ -17,7 +16,7 @@ const func: DeployFunction = async function ({
     const { owner } = await getNamedAccounts();
 
     const managerFactory: SignatureManager__factory = await ethers.getContractFactory("SignatureManager");
-    const manager = (await upgrades.deployProxy(managerFactory, [ISSUER_ADDRESS])) as SignatureManager;
+    const manager = (await upgrades.deployProxy(managerFactory)) as SignatureManager;
     await manager.deployed();
 
     const artifact = await deployments.getExtendedArtifact("SignatureManager");
@@ -27,7 +26,6 @@ const func: DeployFunction = async function ({
     };
 
     await manager.grantRole(DEFAULT_ADMIN_ROLE, owner);
-    await manager.grantRole(MANAGER_ROLE, owner);
 
     await deployments.save("SignatureManager", deployment);
 };

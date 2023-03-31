@@ -2,7 +2,7 @@ import type { DeployFunction } from "hardhat-deploy/types";
 import type { KinetexRewards, KinetexRewards__factory, SignatureManager } from "../typechain";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { BASE_URI, CONTRACT_URI, ISSUER_ADDRESS } from "../helpers/constants";
-import { DEFAULT_ADMIN_ROLE, MANAGER_ROLE } from "../helpers/roles";
+import { DEFAULT_ADMIN_ROLE, CONSUMER_ROLE } from "../helpers/roles";
 
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
@@ -32,7 +32,10 @@ const func: DeployFunction = async function ({
     await rewards.setContractURI(CONTRACT_URI);
     await rewards.setBaseURI(BASE_URI);
     await rewards.grantRole(DEFAULT_ADMIN_ROLE, owner);
-    await manager.grantRole(MANAGER_ROLE, rewards.address);
+
+    await manager.grantRole(CONSUMER_ROLE, rewards.address);
+    await (await manager.registerConsumer(rewards.address)).wait(1);
+    await manager.setIssuerForConsumer(ISSUER_ADDRESS, rewards.address);
 
     await deployments.save("KinetexRewards", deployment);
 };

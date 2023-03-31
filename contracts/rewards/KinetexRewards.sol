@@ -9,10 +9,12 @@ import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Cou
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
-import {Levels} from "./libraries/Levels.sol";
+import {IERC4906} from "../eip/IERC4906.sol";
+import {IERC5192} from "../eip/IERC5192.sol";
+
+import {Levels} from "../libraries/Levels.sol";
 import {IKinetexRewards} from "./IKinetexRewards.sol";
-import {ISignatureManager} from "./cryptography/ISignatureManager.sol";
-import {IERC4906} from "./eip/IERC4906.sol";
+import {ISignatureManager} from "../cryptography/ISignatureManager.sol";
 
 /**
  * @title                   Kinetex Rewards
@@ -26,6 +28,7 @@ contract KinetexRewards is
     ERC721Upgradeable,
     ERC721BurnableUpgradeable,
     IERC4906,
+    IERC5192,
     AccessControlUpgradeable,
     UUPSUpgradeable
 {
@@ -37,17 +40,22 @@ contract KinetexRewards is
     bytes32 public constant BURNER_ROLE = keccak256(abi.encodePacked("BURNER_ROLE"));
     string public baseURI;
     string public contractMetadataURI;
+    bool public contractLocked;
 
     address private _signatureManager;
-    address private _stakingContract;
 
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 
-    uint256[96] private __gap;
+    uint256[91] private __gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
+    }
+
+    modifier onlyUnlocked() {
+        require(!contractLocked, "KR: Tokens are soulbound");
+        _;
     }
 
     /**
@@ -64,6 +72,7 @@ contract KinetexRewards is
         _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(BURNER_ROLE, msg.sender);
 
+        contractLocked = true;
         _signatureManager = signatureManager;
     }
 
@@ -77,12 +86,15 @@ contract KinetexRewards is
         uint256 _nonce,
         bytes calldata _signature
     ) external {
+        ISignatureManager signatureManager = ISignatureManager(_signatureManager);
+        uint256 _consumerId = signatureManager.getConsumerId(address(this));
+
         require(
-            ISignatureManager(_signatureManager).verifySpending(_to, _dust, _nonce, _signature) ==
-                true,
+            signatureManager.verifySignature(_to, _dust, _nonce, _signature, _consumerId) == true,
             "KR: Issuer signature mismatch"
         );
-        ISignatureManager(_signatureManager).useSignature(_signature);
+
+        signatureManager.useSignature(_signature);
 
         _setAttributesAndMint(_to, _dust);
     }
@@ -95,9 +107,22 @@ contract KinetexRewards is
     }
 
     /**
+     *  @notice         Determines whether the token is transferrable.
+     *  @dev            EIP 5192
+     *  @param  tokenId token Id.
+     */
+    function locked(uint256 tokenId) external view returns (bool) {
+        return (ownerOf(tokenId) != address(0) && contractLocked);
+    }
+
+    /**
      *  @notice Token burn. Refer to IKinetexRewards.sol
      */
-    function burn(uint256 _tokenId) public override(ERC721BurnableUpgradeable, IKinetexRewards) {
+    function burn(uint256 _tokenId)
+        public
+        override(ERC721BurnableUpgradeable, IKinetexRewards)
+        onlyUnlocked
+    {
         delete _attributesByTokenId[_tokenId];
         super.burn(_tokenId);
         emit Burn(_tokenId);
@@ -106,10 +131,59 @@ contract KinetexRewards is
     /**
      *  @notice Token burn that doesn't require approval. Refer to IKinetexRewards.sol
      */
-    function burnPriveleged(uint256 _tokenId) external onlyRole(BURNER_ROLE) {
+    function burnPriveleged(uint256 _tokenId) external onlyRole(BURNER_ROLE) onlyUnlocked {
         delete _attributesByTokenId[_tokenId];
         _burn(_tokenId);
         emit Burn(_tokenId);
+    }
+
+    /**
+     *  @notice Makes the tokens soulbound (non-transferrable)
+     *  @dev    EIP5192
+     */
+    function lock() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!contractLocked, "KR: contract already locked");
+        contractLocked = true;
+        for (uint256 i; i < _tokenIdCounter.current(); i++) {
+            emit Locked(i);
+        }
+    }
+
+    /**
+     *  @notice Makes the tokens transferrable
+     *  @dev    EIP5192
+     */
+    function unlock() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(contractLocked, "KR: contract already unlocked");
+        contractLocked = false;
+        for (uint256 i; i < _tokenIdCounter.current(); i++) {
+            emit Unlocked(i);
+        }
+    }
+
+    /**
+     *  @notice Override for OpenZeppelin ERC721 transferFrom()
+     *  @dev    EIP5192, EIP712
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public virtual override onlyUnlocked {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    /**
+     *  @notice Override for OpenZeppelin ERC721 safeTransferFrom()
+     *  @dev    EIP5192, EIP712
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public virtual override onlyUnlocked {
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 
     /**
@@ -127,22 +201,6 @@ contract KinetexRewards is
     function setContractURI(string calldata _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         contractMetadataURI = _uri;
         emit SetContractURI(_uri);
-    }
-
-    /**
-     *  @notice                 Sets the staking contract.
-     *  @param stakingContract  Address of the KinetexStaking instance
-     */
-    function setStakingContract(address stakingContract) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _stakingContract = stakingContract;
-    }
-
-    /**
-     *  @notice         Retrieves a token's dust value.
-     *  @param _tokenId token Id.
-     */
-    function getDust(uint256 _tokenId) external view returns (uint256) {
-        return _attributesByTokenId[_tokenId].dust;
     }
 
     /**
