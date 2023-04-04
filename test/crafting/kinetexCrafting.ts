@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getNamedAccounts, deployments } from "hardhat";
-import { BURNER_ROLE, forceUnlocked, Level, mint, MINTER_ROLE } from "../../helpers";
+import { BURNER_ROLE, forceLocked, forceUnlocked, Level, mint, MINTER_ROLE } from "../../helpers";
 import { ethers } from "hardhat";
 
 import type { KinetexCrafting, KinetexRewards } from "../../typechain";
@@ -38,21 +38,22 @@ describe("KinetexCrafting tests", function () {
 
     describe("Crafting logic", () => {
         describe("Crafts a GEM", () => {
-            it("Receives a DUST lvl nft with 4 dust", async () => {
+            it("Receives a DUST lvl nft with 2000 dust", async () => {
+                await forceUnlocked(rewards);
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "4");
+                const args = await mint(rewards, "2000");
                 expect(args.attributes.level).to.eq(Level.DUST);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Receives a DUST lvl nft with 7 dust", async () => {
+            it("Receives a DUST lvl nft with 2000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "7");
+                const args = await mint(rewards, "2000");
                 expect(args.attributes.level).to.eq(Level.DUST);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Creates a GEM lvl nft with 11 dust", async () => {
+            it("Creates a GEM lvl nft with 4000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
                 const tokenA = BigNumber.from("0");
                 const tokenB = BigNumber.from("1");
@@ -68,7 +69,7 @@ describe("KinetexCrafting tests", function () {
                 // deployer now has 1 nft
                 expect(await rewards.balanceOf(deployer)).to.eq(BigNumber.from("1"));
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("11"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("4000"));
             });
 
             it("Burns received DUST nfts", async () => {
@@ -81,21 +82,21 @@ describe("KinetexCrafting tests", function () {
         });
 
         describe("Crafts a CRYSTAL", () => {
-            it("Receives a GEM lvl nft with 44 dust", async () => {
+            it("Receives a GEM lvl nft with 4000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "44");
+                const args = await mint(rewards, "4000");
                 expect(args.attributes.level).to.eq(Level.GEM);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Receives a GEM lvl nft with 77 dust", async () => {
+            it("Receives a GEM lvl nft with 4000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "77");
+                const args = await mint(rewards, "4000");
                 expect(args.attributes.level).to.eq(Level.GEM);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Creates a CRYSTAL lvl nft with 121 dust", async () => {
+            it("Creates a CRYSTAL lvl nft with 8000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
                 const tokenA = BigNumber.from("3");
                 const tokenB = BigNumber.from("4");
@@ -109,26 +110,26 @@ describe("KinetexCrafting tests", function () {
                 const tokenId = args3.tokenId;
 
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("121"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("8000"));
             });
         });
 
         describe("Crafts a LIGHTNING", () => {
-            it("Receives a CRYSTAL lvl nft with 444 dust", async () => {
+            it("Receives a CRYSTAL lvl nft with 6000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "444");
+                const args = await mint(rewards, "6000");
                 expect(args.attributes.level).to.eq(Level.CRYSTAL);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Receives a CRYSTAL lvl nft with 777 dust", async () => {
+            it("Receives a CRYSTAL lvl nft with 6000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
-                const args = await mint(rewards, "777");
+                const args = await mint(rewards, "6000");
                 expect(args.attributes.level).to.eq(Level.CRYSTAL);
                 expect(await rewards.ownerOf(args.tokenId)).to.eq(deployer);
             });
 
-            it("Creates a LIGHTNING lvl nft with 1221 dust", async () => {
+            it("Creates a LIGHTNING lvl nft with 12000 dust", async () => {
                 const { deployer } = await getNamedAccounts();
                 const tokenA = BigNumber.from("6");
                 const tokenB = BigNumber.from("7");
@@ -142,7 +143,7 @@ describe("KinetexCrafting tests", function () {
                 const tokenId = args3.tokenId;
 
                 expect(await rewards.ownerOf(tokenId)).to.eq(deployer);
-                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("1221"));
+                expect((await rewards.getAttributes(tokenId)).dust).to.eq(BigNumber.from("12000"));
             });
         });
     });
@@ -173,6 +174,17 @@ describe("KinetexCrafting tests", function () {
             await expect(crafting.connect(testerSigner).craft(args1.tokenId, args2.tokenId)).to.be.revertedWith(
                 "KC: Not the owner of tokenA"
             );
+        });
+    });
+
+    describe("Soulbound", () => {
+        it("Can't craft when KinetexRewards is Soulbound", async () => {
+            await forceLocked(rewards);
+            const args1 = await mint(rewards, "1000");
+            expect(args1.attributes.level).to.eq(Level.DUST);
+            const args2 = await mint(rewards, "2000");
+            expect(args2.attributes.level).to.eq(Level.DUST);
+            await expect(crafting.craft(args1.tokenId, args2.tokenId)).to.be.reverted;
         });
     });
 });

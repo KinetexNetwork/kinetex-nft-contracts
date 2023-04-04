@@ -12,7 +12,7 @@ import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC4906} from "../eip/IERC4906.sol";
 import {IERC5192} from "../eip/IERC5192.sol";
 
-import {Levels} from "../libraries/Levels.sol";
+import {RewardLevels} from "../libraries/RewardLevels.sol";
 import {IKinetexRewards} from "./IKinetexRewards.sol";
 import {ISignatureManager} from "../cryptography/ISignatureManager.sol";
 
@@ -242,7 +242,7 @@ contract KinetexRewards is
      */
     function _setAttributesAndMint(address _to, uint256 _dust) internal {
         uint256 tokenId = _tokenIdCounter.current();
-        Levels.Level level = Levels.getLevelByDustAmount(_dust);
+        RewardLevels.Level level = RewardLevels._level(_dust);
 
         _attributesByTokenId[tokenId] = Attributes(level, _dust);
 

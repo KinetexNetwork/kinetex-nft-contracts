@@ -72,7 +72,7 @@ describe("KinetexRewards base logic tests", function () {
 
         it("Mints DUST token", async () => {
             const { deployer } = await getNamedAccounts();
-            const dust = BigNumber.from("3");
+            const dust = BigNumber.from("1000");
             const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
@@ -82,7 +82,7 @@ describe("KinetexRewards base logic tests", function () {
 
         it("Mints GEM token", async () => {
             const { deployer } = await getNamedAccounts();
-            const dust = BigNumber.from("33");
+            const dust = BigNumber.from("4000");
             const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
@@ -92,7 +92,7 @@ describe("KinetexRewards base logic tests", function () {
 
         it("Mints CRYSTAL token", async () => {
             const { deployer } = await getNamedAccounts();
-            const dust = BigNumber.from("333");
+            const dust = BigNumber.from("6000");
             const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;
@@ -102,7 +102,7 @@ describe("KinetexRewards base logic tests", function () {
 
         it("Mints LIGHTNING token", async () => {
             const { deployer } = await getNamedAccounts();
-            const dust = BigNumber.from("3333");
+            const dust = BigNumber.from("11000");
             const tx = await rewards.safeMintPriveleged(deployer, dust);
             const receipt = await tx.wait(1);
             const args = receipt.events?.filter((el) => el.event === "Mint")[0].args!;

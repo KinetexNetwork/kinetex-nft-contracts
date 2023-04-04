@@ -7,7 +7,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import {IKinetexRewards} from "../rewards/IKinetexRewards.sol";
-import {Levels} from "../libraries/Levels.sol";
+import {RewardLevels} from "../libraries/RewardLevels.sol";
 
 /**
  * @title                   Kinetex Crafting

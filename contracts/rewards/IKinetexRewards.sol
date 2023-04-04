@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import {Levels} from "../libraries/Levels.sol";
+import {RewardLevels} from "../libraries/RewardLevels.sol";
 
 interface IKinetexRewards {
     /// @dev Emitted when an NFT is minted.
@@ -22,7 +22,7 @@ interface IKinetexRewards {
      *  @param _dust    Number value for crafting and staking power.
      */
     struct Attributes {
-        Levels.Level level;
+        RewardLevels.Level level;
         uint256 dust;
     }
 

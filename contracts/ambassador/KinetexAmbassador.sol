@@ -41,6 +41,7 @@ contract KinetexAmbassador is
     string public contractMetadataURI;
 
     uint256 public constant REWARDS_PER_BURN = 100**18;
+    bool public burnRewardUnlocked;
 
     address private _signatureManager;
     address private _kinetexRewards;
@@ -129,7 +130,9 @@ contract KinetexAmbassador is
         delete _levelByTokenId[_tokenId];
         super.burn(_tokenId);
 
-        IKinetexRewards(_kinetexRewards).safeMintPriveleged(msg.sender, REWARDS_PER_BURN);
+        if (burnRewardUnlocked) {
+            IKinetexRewards(_kinetexRewards).safeMintPriveleged(msg.sender, REWARDS_PER_BURN);
+        }
 
         emit Burn(_tokenId);
     }
@@ -195,6 +198,13 @@ contract KinetexAmbassador is
      */
     function contractURI() external view returns (string memory) {
         return contractMetadataURI;
+    }
+
+    /**
+     *  @notice Toggles the mint of KinetexReward tokens to burner
+     */
+    function setBurnReward(bool _status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        burnRewardUnlocked = _status;
     }
 
     /**
