@@ -1,9 +1,15 @@
 # TypeScript
 node_modules
-.env
 coverage
 coverage.json
 typechain
+
+# environment
+.env
+.env.mumbai
+.env.goerli
+.env.hardhat
+.env.mainnet
 
 # Hardhat files
 cache

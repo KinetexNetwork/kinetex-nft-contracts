@@ -31,4 +31,4 @@ const func: DeployFunction = async function ({
 };
 
 export default func;
-func.tags = ["deployment", "SignatureManager"];
+func.tags = ["deployment", "SignatureManager", "ktxr"];

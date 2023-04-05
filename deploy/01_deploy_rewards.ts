@@ -40,4 +40,4 @@ const func: DeployFunction = async function ({
 };
 
 export default func;
-func.tags = ["deployment", "Rewards"];
+func.tags = ["deployment", "Rewards", "ktxr"];

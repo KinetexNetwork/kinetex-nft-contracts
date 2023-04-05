@@ -1,11 +1,11 @@
 import type { DeployFunction } from "hardhat-deploy/types";
-import type { KinetexRewards, SignatureManager } from "../typechain";
+import type { SignatureManager } from "../typechain";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import "hardhat-deploy";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-ethers";
-import { DEFAULT_ADMIN_ROLE, CONSUMER_ROLE } from "../helpers/roles";
+import { DEFAULT_ADMIN_ROLE } from "../helpers/roles";
 
 const func: DeployFunction = async function ({ ethers, deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
     const { deployer } = await getNamedAccounts();
@@ -17,4 +17,4 @@ const func: DeployFunction = async function ({ ethers, deployments, getNamedAcco
 };
 
 export default func;
-func.tags = ["access", "Rewards"];
+func.tags = ["access", "Rewards", "ktxr"];

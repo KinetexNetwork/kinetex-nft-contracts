@@ -36,4 +36,4 @@ const func: DeployFunction = async function ({
 };
 
 export default func;
-func.tags = ["deployment", "Crafting"];
+func.tags = ["deployment", "Crafting", "ktxr"];
