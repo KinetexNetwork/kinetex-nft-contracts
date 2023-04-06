@@ -54,8 +54,10 @@ contract KinetexAmbassador is
     }
 
     mapping(uint256 => Level) internal _levelByTokenId;
+    mapping(Level => uint256) internal _maxSupplyByLevel;
+    mapping(Level => uint256) internal _supplyByLevel;
 
-    uint256[91] private __gap;
+    uint256[89] private __gap;
 
     /// @dev Emitted when an NFT is minted.
     event Mint(uint256 tokenId, Level level);
@@ -91,6 +93,11 @@ contract KinetexAmbassador is
 
         _signatureManager = signatureManager;
         _kinetexRewards = kinetexRewards;
+
+        _maxSupplyByLevel[Level.JUNIOR] = 300;
+        _maxSupplyByLevel[Level.MASTER] = 50;
+        _maxSupplyByLevel[Level.MAGISTER] = 25;
+        _maxSupplyByLevel[Level.LEGENDARY] = 3;
     }
 
     /**
@@ -166,6 +173,16 @@ contract KinetexAmbassador is
     }
 
     /**
+     *  @notice Updates the max supply per level.
+     */
+    function setMaxSupplyForLevel(uint256 _level, uint256 _supply)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        _maxSupplyByLevel[Level(_level)] = _supply;
+    }
+
+    /**
      *  @notice         Retrieves onchain metadata.
      *  @param _tokenId token Id.
      */
@@ -211,6 +228,9 @@ contract KinetexAmbassador is
      *  @dev Updates onchain metadata and calls the _safeMint on ERC721.
      */
     function _setAttributesAndMint(address _to, uint256 _level) internal {
+        uint256 newSupply = _supplyByLevel[Level(_level)] + 1;
+        require(newSupply <= _maxSupplyByLevel[Level(_level)], "KA: Level's max supply reached");
+
         uint256 tokenId = _tokenIdCounter.current();
 
         _levelByTokenId[tokenId] = Level(_level);
@@ -219,6 +239,8 @@ contract KinetexAmbassador is
         _safeMint(_to, tokenId);
 
         emit Mint(tokenId, Level(_level));
+
+        _supplyByLevel[Level(_level)] = newSupply;
     }
 
     /**

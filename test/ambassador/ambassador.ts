@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { getNamedAccounts, deployments, ethers } from "hardhat";
-import { MINTER_ROLE, BURNER_ROLE, grantReward, forceUnlocked } from "../../helpers";
+import { MINTER_ROLE, BURNER_ROLE, grantReward, forceUnlocked, AmbassadorLevel } from "../../helpers";
 
 import type { KinetexAmbassador, KinetexRewards } from "../../typechain";
 
@@ -65,6 +65,40 @@ describe("KinetexAmbassador tests", function () {
             const { tester } = await getNamedAccounts();
             await expect(ambassador.safeMint(tester, BigNumber.from("0"), BigNumber.from("0"), signature)).to.be
                 .reverted;
+        });
+    });
+
+    describe("Max Supply", () => {
+        it("Can't exceed max supply", async () => {
+            const { deployer } = await getNamedAccounts();
+
+            for (let i = 0; i < 3; i++) {
+                await ambassador.safeMintPriveleged(deployer, AmbassadorLevel.LEGENDARY);
+            }
+
+            await expect(ambassador.safeMintPriveleged(deployer, AmbassadorLevel.LEGENDARY)).to.be.revertedWith(
+                "KA: Level's max supply reached"
+            );
+        });
+
+        it("Can edit max supply", async () => {
+            await ambassador.setMaxSupplyForLevel(AmbassadorLevel.LEGENDARY, BigNumber.from("5"));
+            const { deployer } = await getNamedAccounts();
+
+            await expect(ambassador.safeMintPriveleged(deployer, AmbassadorLevel.LEGENDARY)).not.to.be.reverted;
+
+            const { tester } = await getNamedAccounts();
+            const testerSigner = await ethers.getSigner(tester);
+            const signature = await grantReward(tester, AmbassadorLevel.LEGENDARY.toString(), "1");
+            expect(
+                await ambassador
+                    .connect(testerSigner)
+                    .safeMint(tester, AmbassadorLevel.LEGENDARY, BigNumber.from("1"), signature)
+            ).to.emit(ambassador, "Mint");
+
+            await expect(ambassador.safeMintPriveleged(deployer, AmbassadorLevel.LEGENDARY)).to.be.revertedWith(
+                "KA: Level's max supply reached"
+            );
         });
     });
 
