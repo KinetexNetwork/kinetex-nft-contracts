@@ -46,6 +46,8 @@ contract KinetexAmbassador is
     address private _signatureManager;
     address private _kinetexRewards;
 
+    mapping(uint256 => uint256) public levelId;
+
     enum Level {
         JUNIOR,
         MASTER,
@@ -240,6 +242,7 @@ contract KinetexAmbassador is
 
         emit Mint(tokenId, Level(_level));
 
+        levelId[tokenId] = newSupply;
         _supplyByLevel[Level(_level)] = newSupply;
     }
 
