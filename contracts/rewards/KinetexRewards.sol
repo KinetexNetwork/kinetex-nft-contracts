@@ -40,9 +40,10 @@ contract KinetexRewards is
     bytes32 public constant BURNER_ROLE = keccak256(abi.encodePacked("BURNER_ROLE"));
     string public baseURI;
     string public contractMetadataURI;
+
     bool public contractLocked;
 
-    address private _signatureManager;
+    address public _signatureManager;
 
     mapping(uint256 => Attributes) internal _attributesByTokenId;
 

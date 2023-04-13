@@ -34,6 +34,7 @@ interface ISignatureManager {
     /**
      *  @notice               Allows the consumer contract to set the issuer
      *  @param _issuer        Signature provider EOA address
+     *  @param _issuer        Consumer address
      */
-    function setIssuer(address _issuer) external;
+    function setIssuer(address _issuer, address _consumer) external;
 }

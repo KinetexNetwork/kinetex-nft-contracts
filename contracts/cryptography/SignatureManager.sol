@@ -33,6 +33,14 @@ contract SignatureManager is
         _disableInitializers();
     }
 
+    modifier onlyRoles(bytes32 _role, bytes32 _otherRole) {
+        require(
+            hasRole(_role, msg.sender) || hasRole(_otherRole, msg.sender),
+            "SM: Access Control"
+        );
+        _;
+    }
+
     /**
      *  @notice       Initialize the contract and grant roles to the deployer
      *  @dev          Proxy initializer. _consumerIdCounter starts from 1.
@@ -81,8 +89,11 @@ contract SignatureManager is
     /**
      *  @dev Refer to ISignatureManager.sol
      */
-    function setIssuer(address _issuer) external onlyRole(CONSUMER_ROLE) {
-        _issuerByConsumerAddress[msg.sender] = _issuer;
+    function setIssuer(address _issuer, address _consumer)
+        external
+        onlyRoles(CONSUMER_ROLE, DEFAULT_ADMIN_ROLE)
+    {
+        _issuerByConsumerAddress[_consumer] = _issuer;
     }
 
     /**
@@ -90,6 +101,18 @@ contract SignatureManager is
      */
     function useSignature(bytes calldata _signature) external onlyRole(CONSUMER_ROLE) {
         _usedSignaturesByConsumer[msg.sender][_signature] = true;
+    }
+
+    /**
+     *  @dev Returns the signature issuer for a consumer
+     */
+    function getIssuer(address _consumer)
+        external
+        view
+        onlyRoles(DEFAULT_ADMIN_ROLE, CONSUMER_ROLE)
+        returns (address)
+    {
+        return _issuerByConsumerAddress[_consumer];
     }
 
     /**
