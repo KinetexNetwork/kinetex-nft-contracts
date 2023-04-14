@@ -13,4 +13,4 @@ const func: DeployFunction = async function ({ ethers, upgrades, deployments }: 
 };
 
 export default func;
-func.tags = ["upgrade", "KinetexRewards", "ktxr"];
+func.tags = ["upgrade", "RewardsUpgrade", "ktxr"];
